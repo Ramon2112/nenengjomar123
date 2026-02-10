@@ -4,7 +4,7 @@ import sys
 # Add project root to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from image_processing import dawn_effect  # adjust if your file is named differently
+from image_processing import dawn
 
 INPUT_FOLDER = "input"      # folder containing images
 OUTPUT_FOLDER = "output"    # where dawn effect images will be saved
