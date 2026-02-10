@@ -96,6 +96,8 @@ def detect_faults(ref_path, test_path, output_folder="output"):
     cv2.imwrite(os.path.join(output_folder, f"{filename}_thresh.png"), thresh)
     cv2.imwrite(os.path.join(output_folder, f"{filename}_faults.png"), output)
 
+    return True
+
 # ----------------------------
 # MAIN EXECUTION
 # ----------------------------
