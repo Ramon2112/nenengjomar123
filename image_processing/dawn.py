@@ -13,43 +13,43 @@ def apply_dawn_effect(image_path, output_folder="output"):
 
     rows, cols, _ = img.shape
 
-    # Step 1: Create radial light mask from top-left
-    Y, X = np.meshgrid(np.arange(rows), np.arange(cols), indexing='ij')
-    center_x, center_y = 0, 0  # top-left corner
-    distance = np.sqrt((X - center_x)**2 + (Y - center_y)**2)
-    max_dist = np.sqrt(cols**2 + rows**2)
-    mask = 1 - (distance / max_dist)  # intensity falls off with distance
+    # Step 1: Create a blank mask for the light ray
+    mask = np.zeros((rows, cols), dtype=np.float32)
+
+    # Line from top-left to center
+    start_point = (0, 0)
+    end_point = (cols//2, rows//2)
+    thickness = 50  # width of light ray
+
+    # Draw a white line on the mask
+    cv2.line(mask, start_point, end_point, 1.0, thickness)
+
+    # Step 2: Apply motion blur to make it soft
+    # Create a motion blur kernel along the line direction
+    kernel_size = 101
+    kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
+    cv2.line(kernel, (0, 0), (kernel_size-1, kernel_size-1), 1.0, 1)
+    kernel /= kernel.sum()  # normalize
+
+    mask = cv2.filter2D(mask, -1, kernel)
     mask = np.clip(mask, 0, 1)
 
-    # Step 2: Add streaks for God rays
-    num_rays = 200  # number of streaks
-    for _ in range(num_rays):
-        angle = np.random.uniform(-0.2, 0.2)  # narrow angle spread
-        length = np.random.randint(int(cols * 0.5), int(cols))
-        x = np.arange(cols)
-        y = (x * np.tan(angle)).astype(int)
-        valid = (y >= 0) & (y < rows)
-        mask[y[valid], x[valid]] += 0.05  # increase intensity along streaks
-
-    mask = np.clip(mask, 0, 1)
-
-    # Step 3: Blur the mask to make rays soft
-    mask = cv2.GaussianBlur(mask, (101, 101), 0)
+    # Step 3: Convert mask to 3 channels
     mask_3ch = cv2.merge([mask, mask, mask])
 
-    # Step 4: Apply mask to original image
+    # Step 4: Apply the light ray mask to the image
     img_float = img.astype(np.float32) / 255.0
-    dawn_img = img_float + mask_3ch * 0.6  # adjust intensity here
-    dawn_img = np.clip(dawn_img, 0, 1)
-    dawn_img = (dawn_img * 255).astype(np.uint8)
+    result = img_float + mask_3ch * 0.8  # adjust intensity of ray
+    result = np.clip(result, 0, 1)
+    result = (result * 255).astype(np.uint8)
 
-    # Step 5: Warm overlay for sunrise feel
-    warm_overlay = np.full_like(dawn_img, (30, 60, 120))  # BGR warm tone
-    dawn_img = cv2.addWeighted(dawn_img, 0.85, warm_overlay, 0.15, 0)
+    # Step 5: Optional warm overlay
+    warm_overlay = np.full_like(result, (30, 60, 120))  # BGR warm tone
+    result = cv2.addWeighted(result, 0.85, warm_overlay, 0.15, 0)
 
     # Save output
-    cv2.imwrite(f"{output_folder}/{filename}_cinematic_dawn.png", dawn_img)
-    print(f"Cinematic dawn effect applied: {filename}_cinematic_dawn.png")
+    cv2.imwrite(f"{output_folder}/{filename}_light_ray.png", result)
+    print(f"Light ray effect applied: {filename}_light_ray.png")
     return True
 
 
