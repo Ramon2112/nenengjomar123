@@ -14,7 +14,7 @@ def apply_dawn_effect(image_path, output_folder="output", num_rays=30, intensity
     img = cv2.imread(image_path)
     if img is None:
         print(f"Image not found: {image_path}")
-        return
+        return False
 
     os.makedirs(output_folder, exist_ok=True)
     filename = os.path.splitext(os.path.basename(image_path))[0]
