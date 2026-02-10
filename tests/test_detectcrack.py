@@ -1,5 +1,10 @@
 import os
-import crack_detector
+import sys
+
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from image_processing import crack_detector
 
 INPUT_FOLDER = "input_images"
 OUTPUT_FOLDER = "test_output"
