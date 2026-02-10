@@ -35,8 +35,6 @@ def detect_cracks(image_path, output_folder="output"):
     result[crack_mask == 255] = [0, 0, 255]
 
     cv2.imwrite(f"{output_folder}/{filename}_edges.png", edges)
-    cv2.imwrite(f"{output_folder}/{filename}_mask.png", crack_mask)
-    cv2.imwrite(f"{output_folder}/{filename}_detected.png", result)
     return True
 
 
