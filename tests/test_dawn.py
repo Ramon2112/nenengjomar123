@@ -24,7 +24,7 @@ def test_images_are_processed():
         if file.lower().endswith((".png", ".jpg", ".jpeg")):
             processed_any = True
             img_path = os.path.join(INPUT_FOLDER, file)
-            success = dawn_effect.apply_dawn_effect(img_path, OUTPUT_FOLDER)
+            success = dawn.apply_dawn_effect(img_path, OUTPUT_FOLDER)
             assert success is True, f"Processing failed for {file}"
 
     assert processed_any, "No images found in input folder"
