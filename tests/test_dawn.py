@@ -41,5 +41,5 @@ def test_output_files_created():
 
 def test_invalid_image_path():
     """Test apply_dawn_effect with invalid image path"""
-    result = dawn_effect.apply_dawn_effect("nonexistent_image.png", OUTPUT_FOLDER)
+    result = dawn.apply_dawn_effect("nonexistent_image.png", OUTPUT_FOLDER)
     assert result is False
