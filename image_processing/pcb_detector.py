@@ -4,34 +4,10 @@ from skimage.metrics import structural_similarity as ssim
 import os
 
 # ----------------------------
-# IMAGE ALIGNMENT FUNCTION
+# PCB FAULT DETECTION FUNCTION (WITH ALIGNMENT)
 # ----------------------------
-def align_images(image, template):
-    """Align test image to reference using ORB feature matching."""
-    gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray_temp = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-
-    orb = cv2.ORB_create(5000)
-    kp1, des1 = orb.detectAndCompute(gray_img, None)
-    kp2, des2 = orb.detectAndCompute(gray_temp, None)
-
-    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    matches = matcher.match(des1, des2)
-    matches = sorted(matches, key=lambda x: x.distance)
-    good_matches = matches[:50]  # Top 50 matches
-
-    src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1,1,2)
-    dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1,1,2)
-
-    matrix, _ = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-    aligned = cv2.warpPerspective(image, matrix, (template.shape[1], template.shape[0]))
-    return aligned
-
-# ----------------------------
-# PCB FAULT DETECTION FUNCTION
-# ----------------------------
-def detect_faults(ref_path, test_path, output_folder="output"):
-    """Detect PCB faults by comparing test image to reference."""
+def detect_pcb_faults(ref_path, test_path, output_folder="output"):
+    """Detect PCB faults by aligning test image to reference and comparing."""
     os.makedirs(output_folder, exist_ok=True)
     filename = os.path.splitext(os.path.basename(test_path))[0]
 
@@ -45,20 +21,41 @@ def detect_faults(ref_path, test_path, output_folder="output"):
     # Resize test to match reference
     test_img = cv2.resize(test_img, (ref_img.shape[1], ref_img.shape[0]))
 
-    # Align test image
-    aligned_test = align_images(test_img, ref_img)
+    # ----------------------------
+    # IMAGE ALIGNMENT INSIDE THIS FUNCTION
+    # ----------------------------
+    gray_test = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
+    gray_ref = cv2.cvtColor(ref_img, cv2.COLOR_BGR2GRAY)
 
+    orb = cv2.ORB_create(5000)
+    kp1, des1 = orb.detectAndCompute(gray_test, None)
+    kp2, des2 = orb.detectAndCompute(gray_ref, None)
+
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    matches = matcher.match(des1, des2)
+    matches = sorted(matches, key=lambda x: x.distance)
+    good_matches = matches[:50]
+
+    src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+    dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+
+    matrix, _ = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+    aligned_test = cv2.warpPerspective(test_img, matrix, (ref_img.shape[1], ref_img.shape[0]))
+
+    # ----------------------------
+    # FAULT DETECTION
+    # ----------------------------
     # Convert to grayscale and blur
     ref_gray = cv2.cvtColor(ref_img, cv2.COLOR_BGR2GRAY)
     test_gray = cv2.cvtColor(aligned_test, cv2.COLOR_BGR2GRAY)
-    ref_blur = cv2.GaussianBlur(ref_gray, (5,5), 0)
-    test_blur = cv2.GaussianBlur(test_gray, (5,5), 0)
+    ref_blur = cv2.GaussianBlur(ref_gray, (5, 5), 0)
+    test_blur = cv2.GaussianBlur(test_gray, (5, 5), 0)
 
     # SSIM comparison
     score, diff = ssim(ref_blur, test_blur, full=True)
     print(f"{filename} - SSIM Similarity Score: {score:.4f}")
 
-    # Highlight differences (invert SSIM map)
+    # Highlight differences
     diff = ((1 - diff) * 255).astype("uint8")
 
     # Threshold differences
@@ -70,7 +67,7 @@ def detect_faults(ref_path, test_path, output_folder="output"):
     )
 
     # Morphological cleanup
-    kernel = np.ones((3,3), np.uint8)
+    kernel = np.ones((3, 3), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=2)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
 
@@ -81,11 +78,11 @@ def detect_faults(ref_path, test_path, output_folder="output"):
 
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if 300 < area < 5000:   # Filter noise
+        if 300 < area < 5000:  # Filter noise
             x, y, w, h = cv2.boundingRect(cnt)
-            cv2.rectangle(output, (x,y), (x+w,y+h), (0,0,255), 2)
-            cv2.putText(output, "PCB Fault", (x, y-5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0,0,255), 1)
+            cv2.rectangle(output, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            cv2.putText(output, "PCB Fault", (x, y - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
             fault_count += 1
 
     print(f"{filename} - Detected Fault Regions: {fault_count}")
