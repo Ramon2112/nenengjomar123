@@ -96,7 +96,11 @@ def apply_dawn_effect(image_path, output_folder="output"):
     blend_strength = 0.5  # Overall strength
     adaptive_blend = blend_strength * (0.7 + 0.3 * brightness_mask)
     
-    result = img_float * (1 - adaptive_blend) + overlay * adaptive_blend
+    # Convert adaptive_blend to 3D for broadcasting with img_float (426,640,3)
+    adaptive_blend_3d = adaptive_blend[:, :, np.newaxis]  # Shape becomes (426,640,1)
+    
+    # Now broadcasting works: (426,640,3) * (426,640,1) + (426,640,3) * (426,640,1)
+    result = img_float * (1 - adaptive_blend_3d) + overlay * adaptive_blend_3d
     result = np.clip(result, 0, 1)
     result = (result * 255).astype(np.uint8)
     
