@@ -79,8 +79,10 @@ def detect_faults(ref_path, test_path, output_folder="output"):
 
     print(f"{filename} - Detected Fault Regions: {fault_count}")
 
-    # Save result
-    cv2.imwrite(f"{output_folder}/{filename}_faults.png", output)
+    cv2.imwrite(f"{output_folder}/{filename}_aligned_test.png", aligned_test)
+    cv2.imwrite(f"{output_folder}/{filename}_difference_map.png", diff)
+    cv2.imwrite(f"{output_folder}/{filename}_faults.png", thresh)
+    cv2.imwrite(f"{output_folder}/{filename}_pcb.png", output)
     return True
 
 def process_folder(ref_path, test_folder, output_folder="output"):
