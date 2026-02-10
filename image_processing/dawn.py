@@ -16,29 +16,32 @@ def apply_dawn_effect(image_path, output_folder="output"):
     # Step 1: Create blank mask for rays
     mask = np.zeros((rows, cols), dtype=np.float32)
 
-    # Step 2: Define end points for rays
+    # Step 2: Define multiple target points
     endpoints = [
-        (0, rows // 2),      # left-center
-        (cols // 2, rows // 2),  # center
-        (cols // 2, 0)       # top-center
+        (0, rows // 2),        # left-center
+        (cols // 2, rows // 2),# center
+        (cols // 2, 0)         # top-center
     ]
 
-    # Step 3: Draw multiple lines to each endpoint
+    # Step 3: Draw triangle-like rays
+    rays_per_point = 8  # more rays for realistic sunbeams
     for end_x, end_y in endpoints:
-        num_rays_per_point = 3  # multiple lines per endpoint
-        for _ in range(num_rays_per_point):
-            # Slight random variation for pointy effect
-            offset_x = np.random.randint(-20, 20)
-            offset_y = np.random.randint(-20, 20)
-            thickness = np.random.randint(5, 20)
+        for i in range(rays_per_point):
+            # Random offset for each ray
+            offset_x = np.random.randint(-40, 40)
+            offset_y = np.random.randint(-40, 40)
 
-            cv2.line(
-                mask,
-                (0, 0),  # source: top-left
-                (end_x + offset_x, end_y + offset_y),
-                1.0,
-                thickness
-            )
+            # Define triangle width at the source
+            source_width = np.random.randint(30, 60)
+
+            # Define the triangle as a polygon: top-left source + offset for width
+            pts = np.array([
+                [0 - source_width//2, 0],       # left edge at source
+                [0 + source_width//2, 0],       # right edge at source
+                [end_x + offset_x, end_y + offset_y]  # tip of the ray
+            ], np.int32)
+
+            cv2.fillConvexPoly(mask, pts, 1.0)
 
     # Step 4: Fade rays: strong at top-left, weaker at end
     Y, X = np.meshgrid(np.arange(rows), np.arange(cols), indexing='ij')
@@ -47,7 +50,7 @@ def apply_dawn_effect(image_path, output_folder="output"):
     fade = np.clip(1 - distance / max_dist, 0, 1)
     mask *= fade
 
-    # Step 5: Blur for soft cinematic look
+    # Step 5: Blur for smooth cinematic rays
     mask = cv2.GaussianBlur(mask, (101, 101), 0)
     mask = np.clip(mask, 0, 1)
 
@@ -60,13 +63,13 @@ def apply_dawn_effect(image_path, output_folder="output"):
     result = np.clip(result, 0, 1)
     result = (result * 255).astype(np.uint8)
 
-    # Step 8: Warm overlay for dawn feel
+    # Step 8: Warm overlay for dawn/sunrise feel
     warm_overlay = np.full_like(result, (30, 60, 120))  # BGR warm tone
     result = cv2.addWeighted(result, 0.85, warm_overlay, 0.15, 0)
 
     # Save output
-    cv2.imwrite(f"{output_folder}/{filename}_pointy_rays.png", result)
-    print(f"Pointy light rays applied: {filename}_pointy_rays.png")
+    cv2.imwrite(f"{output_folder}/{filename}_sunbeams.png", result)
+    print(f"Triangle sunbeams applied: {filename}_sunbeams.png")
     return True
 
 
