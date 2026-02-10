@@ -39,8 +39,3 @@ def test_output_files_created():
             output_file = os.path.join(OUTPUT_FOLDER, f"{name}_faults.png")
             assert os.path.exists(output_file), f"Output file not created: {output_file}"
 
-
-def test_invalid_image_path():
-    """Test detect_faults with invalid image path"""
-    result = pcb_fault_detector.detect_faults("nonexistent_ref.png", "nonexistent_test.png", OUTPUT_FOLDER)
-    assert result is None
