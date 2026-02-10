@@ -4,7 +4,7 @@ import os
 
 def apply_dawn_effect(image_path, output_folder="output"):
     """
-    Applies a bright dawn effect with rays from top-left to center-right.
+    Applies cinematic dawn rays effect similar to uploaded reference image.
     """
     img = cv2.imread(image_path)
     if img is None:
@@ -13,51 +13,56 @@ def apply_dawn_effect(image_path, output_folder="output"):
 
     os.makedirs(output_folder, exist_ok=True)
     filename = os.path.splitext(os.path.basename(image_path))[0]
-    output_path = os.path.join(output_folder, f"{filename}_dawn_rays.png")
+    output_path = os.path.join(output_folder, f"{filename}_cinematic_dawn.png")
 
     img_float = img.astype(np.float32) / 255.0
     rows, cols, _ = img.shape
 
-    # Create a directional light ray gradient
+    # Create coordinate grid
     X, Y = np.meshgrid(np.arange(cols), np.arange(rows))
+
+    # Light source at top-left
+    light_x, light_y = 0, 0
+
+    # Vector from light source to each pixel
+    dx = X - light_x
+    dy = Y - light_y
+
+    # Angle of rays for directional spread
+    angle = np.arctan2(dy, dx)
     
-    # Direction vector from top-left (0,0) to center-right (cols, rows/2)
-    target_x = cols
-    target_y = rows // 2
-    dx = target_x - 0
-    dy = target_y - 0
-    length = np.sqrt(dx**2 + dy**2)
+    # Radial distance from light
+    distance = np.sqrt(dx**2 + dy**2)
+    distance_norm = distance / np.max(distance)
 
-    # Normalize distance along ray direction
-    distance_along_ray = ((X * dx + Y * dy) / (length**2))
-    distance_along_ray = np.clip(distance_along_ray, 0, 1)
-
-    # Create bright rays effect (exponential falloff)
-    rays = np.exp(-3 * (1 - distance_along_ray))  # stronger near start
+    # Create light ray intensity with directional focus
+    # Stronger along diagonal (~45 degrees) and exponential falloff
+    target_angle = np.pi / 4  # 45 degrees diagonal
+    angle_diff = np.abs(angle - target_angle)
+    rays = np.exp(-5 * distance_norm) * np.exp(-5 * angle_diff)
+    
+    # Add subtle streaks for realism
+    rays += 0.2 * np.sin(0.1 * X + 0.05 * Y)
     rays = np.clip(rays, 0, 1)
 
-    # Optional: add subtle streaks for realism
-    rays += 0.2 * np.sin(0.05 * X + 0.03 * Y)
-    rays = np.clip(rays, 0, 1)
-
-    # Dawn color overlay (BGR)
-    dawn_color = np.array([1.0, 0.85, 0.6])  # warmer and brighter
+    # Warm cinematic dawn color (BGR)
+    dawn_color = np.array([1.0, 0.85, 0.6])
     overlay = np.zeros_like(img_float)
     for i in range(3):
         overlay[:, :, i] = dawn_color[i] * rays
 
-    # Blend overlay with original image (adjust alpha for intensity)
+    # Blend overlay with original image
     result = img_float * 0.6 + overlay * 0.4
     result = np.clip(result, 0, 1)
     result = (result * 255).astype(np.uint8)
 
     cv2.imwrite(output_path, result)
-    print(f"Bright dawn rays effect applied: {output_path}")
+    print(f"Cinematic dawn rays effect applied: {output_path}")
     return True
 
 def process_folder(input_folder, output_folder="output"):
     """
-    Processes all images in a folder to apply bright dawn rays effect.
+    Process all images in a folder to apply cinematic dawn rays effect.
     """
     for file in os.listdir(input_folder):
         if file.lower().endswith((".png", ".jpg", ".jpeg")):
