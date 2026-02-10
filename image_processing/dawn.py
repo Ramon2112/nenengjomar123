@@ -16,49 +16,57 @@ def apply_dawn_effect(image_path, output_folder="output"):
     # Step 1: Create blank mask for rays
     mask = np.zeros((rows, cols), dtype=np.float32)
 
-    # Step 2: Draw multiple fading rays
-    num_rays = 7  # number of rays
-    center_x, center_y = cols // 2, rows // 2
+    # Step 2: Define end points for rays
+    endpoints = [
+        (0, rows // 2),      # left-center
+        (cols // 2, rows // 2),  # center
+        (cols // 2, 0)       # top-center
+    ]
 
-    for i in range(num_rays):
-        # Slightly randomize end point
-        end_x = center_x + np.random.randint(-50, 50)
-        end_y = center_y + np.random.randint(-50, 50)
-        thickness = np.random.randint(15, 40)
+    # Step 3: Draw multiple lines to each endpoint
+    for end_x, end_y in endpoints:
+        num_rays_per_point = 3  # multiple lines per endpoint
+        for _ in range(num_rays_per_point):
+            # Slight random variation for pointy effect
+            offset_x = np.random.randint(-20, 20)
+            offset_y = np.random.randint(-20, 20)
+            thickness = np.random.randint(5, 20)
 
-        # Create a temporary mask for the line
-        temp_mask = np.zeros_like(mask)
-        cv2.line(temp_mask, (0, 0), (end_x, end_y), 1.0, thickness)
+            cv2.line(
+                mask,
+                (0, 0),  # source: top-left
+                (end_x + offset_x, end_y + offset_y),
+                1.0,
+                thickness
+            )
 
-        # Create fade: multiply by distance factor (strong near start)
-        Y, X = np.meshgrid(np.arange(rows), np.arange(cols), indexing='ij')
-        distance = np.sqrt((X - 0)**2 + (Y - 0)**2)
-        max_dist = np.sqrt(end_x**2 + end_y**2)
-        fade = np.clip(1 - distance / max_dist, 0, 1)
+    # Step 4: Fade rays: strong at top-left, weaker at end
+    Y, X = np.meshgrid(np.arange(rows), np.arange(cols), indexing='ij')
+    distance = np.sqrt((X - 0)**2 + (Y - 0)**2)
+    max_dist = np.sqrt(cols**2 + rows**2)
+    fade = np.clip(1 - distance / max_dist, 0, 1)
+    mask *= fade
 
-        temp_mask *= fade
-        mask += temp_mask
-
-    # Step 3: Blur for smooth cinematic rays
+    # Step 5: Blur for soft cinematic look
     mask = cv2.GaussianBlur(mask, (101, 101), 0)
     mask = np.clip(mask, 0, 1)
 
-    # Step 4: Convert mask to 3 channels
+    # Step 6: Convert mask to 3 channels
     mask_3ch = cv2.merge([mask, mask, mask])
 
-    # Step 5: Apply mask to original image
+    # Step 7: Apply mask to image
     img_float = img.astype(np.float32) / 255.0
     result = img_float + mask_3ch * 0.8  # adjust intensity
     result = np.clip(result, 0, 1)
     result = (result * 255).astype(np.uint8)
 
-    # Step 6: Warm overlay for sunrise/dawn feel
+    # Step 8: Warm overlay for dawn feel
     warm_overlay = np.full_like(result, (30, 60, 120))  # BGR warm tone
     result = cv2.addWeighted(result, 0.85, warm_overlay, 0.15, 0)
 
     # Save output
-    cv2.imwrite(f"{output_folder}/{filename}_fading_rays.png", result)
-    print(f"Fading light rays applied: {filename}_fading_rays.png")
+    cv2.imwrite(f"{output_folder}/{filename}_pointy_rays.png", result)
+    print(f"Pointy light rays applied: {filename}_pointy_rays.png")
     return True
 
 
