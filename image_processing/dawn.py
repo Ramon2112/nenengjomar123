@@ -13,43 +13,41 @@ def apply_dawn_effect(image_path, output_folder="output"):
 
     rows, cols, _ = img.shape
 
-    # Step 1: Create a blank mask for the light ray
+    # Step 1: Create blank mask for rays
     mask = np.zeros((rows, cols), dtype=np.float32)
 
-    # Line from top-left to center
-    start_point = (0, 0)
-    end_point = (cols//2, rows//2)
-    thickness = 50  # width of light ray
+    # Step 2: Draw multiple lines from top-left to center with small angle variations
+    num_rays = 5  # number of rays
+    center_x, center_y = cols // 2, rows // 2
 
-    # Draw a white line on the mask
-    cv2.line(mask, start_point, end_point, 1.0, thickness)
+    for i in range(num_rays):
+        # Slightly randomize the end point for each ray
+        end_x = center_x + np.random.randint(-50, 50)
+        end_y = center_y + np.random.randint(-50, 50)
+        thickness = np.random.randint(20, 50)  # varying thickness
 
-    # Step 2: Apply motion blur to make it soft
-    # Create a motion blur kernel along the line direction
-    kernel_size = 101
-    kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
-    cv2.line(kernel, (0, 0), (kernel_size-1, kernel_size-1), 1.0, 1)
-    kernel /= kernel.sum()  # normalize
+        cv2.line(mask, (0, 0), (end_x, end_y), 1.0, thickness)
 
-    mask = cv2.filter2D(mask, -1, kernel)
+    # Step 3: Apply Gaussian blur to smooth rays
+    mask = cv2.GaussianBlur(mask, (101, 101), 0)
     mask = np.clip(mask, 0, 1)
 
-    # Step 3: Convert mask to 3 channels
+    # Step 4: Convert mask to 3 channels
     mask_3ch = cv2.merge([mask, mask, mask])
 
-    # Step 4: Apply the light ray mask to the image
+    # Step 5: Apply the light rays to the image
     img_float = img.astype(np.float32) / 255.0
-    result = img_float + mask_3ch * 0.8  # adjust intensity of ray
+    result = img_float + mask_3ch * 0.7  # adjust intensity
     result = np.clip(result, 0, 1)
     result = (result * 255).astype(np.uint8)
 
-    # Step 5: Optional warm overlay
+    # Step 6: Warm overlay for dawn feel
     warm_overlay = np.full_like(result, (30, 60, 120))  # BGR warm tone
     result = cv2.addWeighted(result, 0.85, warm_overlay, 0.15, 0)
 
     # Save output
-    cv2.imwrite(f"{output_folder}/{filename}_light_ray.png", result)
-    print(f"Light ray effect applied: {filename}_light_ray.png")
+    cv2.imwrite(f"{output_folder}/{filename}_multiple_rays.png", result)
+    print(f"Multiple light rays applied: {filename}_multiple_rays.png")
     return True
 
 
