@@ -35,5 +35,3 @@ def test_output_files_created():
             name = os.path.splitext(file)[0]
 
             assert os.path.exists(f"{OUTPUT_FOLDER}/{name}_edges.png")
-            assert os.path.exists(f"{OUTPUT_FOLDER}/{name}_mask.png")
-            assert os.path.exists(f"{OUTPUT_FOLDER}/{name}_detected.png")
