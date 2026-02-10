@@ -25,7 +25,7 @@ def test_images_are_processed():
             processed_any = True
             img_path = os.path.join(INPUT_FOLDER, file)
             # Use the same image as reference and test
-            success = pcb_fault_detector.detect_faults(img_path, img_path, OUTPUT_FOLDER)
+            success = pcb_detector.detect_faults(img_path, img_path, OUTPUT_FOLDER)
             assert success is True, f"Processing failed for {file}"
 
     assert processed_any, "No images found in input folder"
