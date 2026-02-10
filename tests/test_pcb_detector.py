@@ -4,7 +4,7 @@ import sys
 # Add project root to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from image_processing import pcb_fault_detector  # replace with your module name if different
+from image_processing import pcb_detector  # replace with your module name if different
 
 INPUT_FOLDER = "input"      # folder containing PCB images
 OUTPUT_FOLDER = "output"    # where processed images will be saved
