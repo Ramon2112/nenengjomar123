@@ -2,7 +2,7 @@ import os
 import sys
 
 # Add project root to Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(_file_), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from acne_detector import detect_acne  # make sure your file is acne_detector.py
 
