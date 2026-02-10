@@ -29,10 +29,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: 🖼️ Run image processing
-      run: |
-        python image_processing/process.py
-
     - name: 🧪 Run all pytest tests
       run: |
         pytest -v
