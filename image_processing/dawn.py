@@ -4,7 +4,7 @@ import os
 
 def apply_dawn_effect(image_path, output_folder="output"):
     """
-    Applies a dawn effect with light rays from top-left to a single image and saves it.
+    Applies a bright dawn effect with rays from top-left to center-right.
     """
     img = cv2.imread(image_path)
     if img is None:
@@ -18,40 +18,51 @@ def apply_dawn_effect(image_path, output_folder="output"):
     img_float = img.astype(np.float32) / 255.0
     rows, cols, _ = img.shape
 
-    # Create radial gradient for light rays
+    # Create a directional light ray gradient
     X, Y = np.meshgrid(np.arange(cols), np.arange(rows))
-    cx, cy = 0, 0  # Light source at top-left corner
-    distance = np.sqrt((X - cx)**2 + (Y - cy)**2)
-    distance = distance / np.max(distance)  # Normalize to 0-1
+    
+    # Direction vector from top-left (0,0) to center-right (cols, rows/2)
+    target_x = cols
+    target_y = rows // 2
+    dx = target_x - 0
+    dy = target_y - 0
+    length = np.sqrt(dx**2 + dy**2)
 
-    # Create radial light intensity with streak effect
-    rays = np.exp(-3 * distance)  # exponential falloff
-    rays += 0.15 * np.sin(0.05 * X + 0.05 * Y)  # subtle streaks
+    # Normalize distance along ray direction
+    distance_along_ray = ((X * dx + Y * dy) / (length**2))
+    distance_along_ray = np.clip(distance_along_ray, 0, 1)
+
+    # Create bright rays effect (exponential falloff)
+    rays = np.exp(-3 * (1 - distance_along_ray))  # stronger near start
+    rays = np.clip(rays, 0, 1)
+
+    # Optional: add subtle streaks for realism
+    rays += 0.2 * np.sin(0.05 * X + 0.03 * Y)
     rays = np.clip(rays, 0, 1)
 
     # Dawn color overlay (BGR)
-    dawn_color = np.array([1.0, 0.8, 0.6])
+    dawn_color = np.array([1.0, 0.85, 0.6])  # warmer and brighter
     overlay = np.zeros_like(img_float)
     for i in range(3):
         overlay[:, :, i] = dawn_color[i] * rays
 
-    # Blend original image with overlay
-    result = img_float * 0.7 + overlay * 0.3
+    # Blend overlay with original image (adjust alpha for intensity)
+    result = img_float * 0.6 + overlay * 0.4
     result = np.clip(result, 0, 1)
     result = (result * 255).astype(np.uint8)
 
     cv2.imwrite(output_path, result)
-    print(f"Dawn rays effect applied: {output_path}")
+    print(f"Bright dawn rays effect applied: {output_path}")
     return True
 
 def process_folder(input_folder, output_folder="output"):
     """
-    Processes all images in a folder to apply dawn rays effect.
+    Processes all images in a folder to apply bright dawn rays effect.
     """
     for file in os.listdir(input_folder):
         if file.lower().endswith((".png", ".jpg", ".jpeg")):
             path = os.path.join(input_folder, file)
-            apply_dawn_rays(path, output_folder)
+            apply_dawn_effect(path, output_folder)
 
 if __name__ == "__main__":
     folder = input("Enter folder path containing images: ")
