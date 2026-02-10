@@ -6,7 +6,7 @@ import os
 # ----------------------------
 # PCB FAULT DETECTION FUNCTION (WITH ALIGNMENT)
 # ----------------------------
-def detect_pcb_faults(ref_path, test_path, output_folder="output"):
+def detect_faults(ref_path, test_path, output_folder="output"):
     """Detect PCB faults by aligning test image to reference and comparing."""
     os.makedirs(output_folder, exist_ok=True)
     filename = os.path.splitext(os.path.basename(test_path))[0]
