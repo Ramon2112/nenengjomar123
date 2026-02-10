@@ -13,30 +13,43 @@ def apply_dawn_effect(image_path, output_folder="output"):
 
     rows, cols, _ = img.shape
 
-    # Create light rays mask
-    mask = np.zeros((rows, cols), dtype=np.float32)
-    for i in range(rows):
-        for j in range(cols):
-            mask[i, j] = max(0, 1 - ((i + j) / (rows + cols)))  # intensity from top-left
-
-    # Optional subtle rays pattern
-    X, Y = np.meshgrid(np.arange(cols), np.arange(rows))
-    ray_pattern = np.sin((X + Y * 0.5) * 0.02)
-    mask += ray_pattern * 0.3
+    # Step 1: Create radial light mask from top-left
+    Y, X = np.meshgrid(np.arange(rows), np.arange(cols), indexing='ij')
+    center_x, center_y = 0, 0  # top-left corner
+    distance = np.sqrt((X - center_x)**2 + (Y - center_y)**2)
+    max_dist = np.sqrt(cols**2 + rows**2)
+    mask = 1 - (distance / max_dist)  # intensity falls off with distance
     mask = np.clip(mask, 0, 1)
 
+    # Step 2: Add streaks for God rays
+    num_rays = 200  # number of streaks
+    for _ in range(num_rays):
+        angle = np.random.uniform(-0.2, 0.2)  # narrow angle spread
+        length = np.random.randint(int(cols * 0.5), int(cols))
+        x = np.arange(cols)
+        y = (x * np.tan(angle)).astype(int)
+        valid = (y >= 0) & (y < rows)
+        mask[y[valid], x[valid]] += 0.05  # increase intensity along streaks
+
+    mask = np.clip(mask, 0, 1)
+
+    # Step 3: Blur the mask to make rays soft
+    mask = cv2.GaussianBlur(mask, (101, 101), 0)
     mask_3ch = cv2.merge([mask, mask, mask])
+
+    # Step 4: Apply mask to original image
     img_float = img.astype(np.float32) / 255.0
-    dawn_img = img_float + mask_3ch * 0.5
+    dawn_img = img_float + mask_3ch * 0.6  # adjust intensity here
     dawn_img = np.clip(dawn_img, 0, 1)
     dawn_img = (dawn_img * 255).astype(np.uint8)
 
-    # Warm overlay for sunrise feel
+    # Step 5: Warm overlay for sunrise feel
     warm_overlay = np.full_like(dawn_img, (30, 60, 120))  # BGR warm tone
     dawn_img = cv2.addWeighted(dawn_img, 0.85, warm_overlay, 0.15, 0)
 
-    cv2.imwrite(f"{output_folder}/{filename}_dawn.png", dawn_img)
-    print(f"Dawn effect applied: {filename}_dawn.png")
+    # Save output
+    cv2.imwrite(f"{output_folder}/{filename}_cinematic_dawn.png", dawn_img)
+    print(f"Cinematic dawn effect applied: {filename}_cinematic_dawn.png")
     return True
 
 
