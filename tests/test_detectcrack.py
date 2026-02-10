@@ -6,8 +6,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from image_processing import crack_detector
 
-INPUT_FOLDER = "input_images"
-OUTPUT_FOLDER = "test_output"
+INPUT_FOLDER = "input"
+OUTPUT_FOLDER = "output"
 
 
 def test_input_folder_exists():
