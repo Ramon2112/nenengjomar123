@@ -4,7 +4,7 @@ import sys
 # Add project root to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from image_processing import pcb_fault_detector  # adjust if your file is named differently
+from image_processing import pcb_detector  # adjust if your file is named differently
 
 # Paths
 REFERENCE_IMAGE = "image_processing/reference_pcb.png"  # path to your reference PCB
